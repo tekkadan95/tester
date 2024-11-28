@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<parameters>
+    <param name="invoiceline-layout" value="tabular"/>
+    <param name="invoiceline-numbering" value="1.1"/>
+    <param name="lang" value="de"/>
+    <param name="tabular-layout-widths" value="2 7 2 2 2 2 1.3 2"/>
+</parameters>

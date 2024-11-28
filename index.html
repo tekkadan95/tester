@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>XRechnung Viewer</title>
+    <link rel="stylesheet" type="text/css" href="xrechnung-viewer.css">
+    <script>
+        // Tab-Funktionalität
+        var a = ["uebersicht", "details", "zusaetze", "anlagen", "laufzettel"];
+        var b = ["menueUebersicht", "menueDetails", "menueZusaetze", "menueAnlagen", "menueLaufzettel"];
+
+        function show(e) {
+            var i = 0;
+            var j = 1;
+            for (var t = 0; t < b.length; t++) {
+                if (b[t] === e.id) {
+                    i = t;
+                    if (i > 0) {
+                        j = 0;
+                    } else {
+                        j = i + 1;
+                    }
+                    break;
+                }
+            }
+            e.setAttribute("class", "btnAktiv");
+            e.setAttribute("aria-selected", "true");
+            for (var k = 0; k < b.length; k++) {
+                if (k === i && (document.getElementById(a[k]) != null)) {
+                    document.getElementById(a[k]).style.display = "block";
+                    if (i === j)
+                        j = i + 1;
+                } else {
+                    if (document.getElementById(a[k]) != null) {
+                        document.getElementById(a[j]).style.display = "none";
+                        document.getElementById(b[j]).setAttribute("class", "btnInaktiv");
+                        document.getElementById(b[j]).setAttribute("aria-selected", "false");
+                        j += 1;
+                    }
+                }
+            }
+        }
+
+        // Zuordnungstabelle für Einheitencodes
+        const unitCodeMap = {
+            "C62": "Stück",
+            "KGM": "Kilogramm",
+            "MTR": "Meter",
+            "LTR": "Liter",
+            // Fügen Sie hier weitere Codes hinzu
+        };
+
+        // Funktion zum Übersetzen der Einheitencodes
+        function translateUnitCode(code) {
+            return unitCodeMap[code] || code;
+        }
+
+        // Funktion zum Ersetzen der Codes auf der Seite
+        function replaceUnitCodes() {
+            document.querySelectorAll('.BT-130').forEach(element => {
+                const originalCode = element.textContent.trim();
+                const translatedUnit = translateUnitCode(originalCode);
+                
+                const translatedSpan = document.createElement('span');
+                translatedSpan.textContent = ` (${translatedUnit})`;
+                translatedSpan.className = 'unit-translation';
+                
+                element.appendChild(translatedSpan);
+                element.title = `${originalCode}: ${translatedUnit}`;
+            });
+        }
+
+        // Funktion zum Herunterladen von eingebetteten Binärdaten
+        function base64_to_binary(data) {
+            var chars = atob(data);
+            var bytes = new Array(chars.length);
+            for (var i = 0; i < chars.length; i++) {
+                bytes[i] = chars.charCodeAt(i);
+            }
+            return new Uint8Array(bytes);
+        }
+
+        function downloadData(element_id, mimetype, filename) {    
+            var data_element = document.getElementById(element_id);  
+            var text = data_element.innerHTML;
+            var binary = base64_to_binary(text);
+            var blob = new Blob([binary], {
+                type: mimetype, size: binary.length
+            });
+
+            if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveOrOpenBlob(blob, filename);
+            } else {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }
+        }
+
+        // Initialisierungsfunktion
+        function initializeViewer() {
+            document.getElementById(b[0]).setAttribute("class", "btnAktiv");
+            document.getElementById(b[0]).setAttribute("aria-selected", "true");
+            document.body.querySelectorAll('[data-title]').forEach(function(element, index) {
+                element.setAttribute('title', element.getAttribute('data-title'));
+            });
+            replaceUnitCodes();
+        }
+
+        let htmlContents = { de: '', en: '' };
+
+        // Electron-spezifische Funktionen
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('select-file').addEventListener('click', async () => {
+                const filePath = await window.electronAPI.openFile();
+                if (filePath) {
+                    document.getElementById('selected-file').textContent = filePath;
+                }
+            });
+
+            document.getElementById('visualize').addEventListener('click', async () => {
+                const filePath = document.getElementById('selected-file').textContent;
+                if (filePath) {
+                    htmlContents = await window.electronAPI.transformXRechnung(filePath);
+                    displaySelectedLanguage();
+                }
+            });
+
+            document.getElementById('language-select').addEventListener('change', displaySelectedLanguage);
+        });
+
+        function displaySelectedLanguage() {
+            const lang = document.getElementById('language-select').value;
+            document.getElementById('content').innerHTML = htmlContents[lang];
+            initializeViewer();
+        }
+    </script>
+</head>
+<body>
+    <div id="file-selection">
+        <button id="select-file">Datei auswählen</button>
+        <span id="selected-file"></span>
+    </div>
+    <button id="visualize">Visualisieren</button>
+    <select id="language-select">
+        <option value="de">Deutsch</option>
+        <option value="en">Englisch</option>
+    </select>
+    <div id="content"></div>
+</body>
+</html>

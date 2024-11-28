@@ -1,0 +1,20 @@
+{
+  "name": "xrechnung-visualization",
+  "version": "1.0.0",
+  "description": "XSL transformators for web rendering of German CIUS XRechnung or EN16931-1:2017.",
+  "main": "main.js",
+  "directories": {
+    "doc": "doc",
+    "lib": "lib"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^32.0.2"
+  }
+}
